@@ -1,64 +1,6 @@
 <?php
-session_start();
-
-
-//koneksi ke database
-$conn = mysqli_connect("localhost", "root", "", "siska");
-
-//cek login 
-if (isset($_POST['login'])) {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-
-    //cocokan dengan database
-    $cekdatabase = mysqli_query($conn, "SELECT * FROM user WHERE username = '$username' AND password = '$password'");
-
-    //hitung jumlah data
-    $hitung = mysqli_num_rows($cekdatabase);
-
-    if ($hitung > 0) {
-        $user = mysqli_fetch_assoc($cekdatabase); // Ambil data pengguna
-
-        $_SESSION['log'] = "True";
-        $_SESSION['role'] = $user['role'];
-
-        if ($user['role'] === 'admin') {
-            header('location:admin/home.php'); // Arahkan ke halaman admin jika rolenya adalah admin
-            exit();
-        } else if ($user['role'] === 'user') {
-            header('location:user/home.php'); // Arahkan ke halaman user jika rolenya adalah user
-            exit();
-        } else {
-            header('location:superadmin/home.php');
-            exit();
-        }
-    } else {
-        $_SESSION['notification'] = [
-            'type' => 'danger',
-            'message' => ' Username atau password salah !'
-        ];
-        header('location:index.php');
-        exit();
-    }
-}
-
-// Cek apakah pengguna sudah login
-if (isset($_SESSION['log'])) {
-    // Jika sudah, arahkan sesuai role
-    if ($_SESSION['role'] === 'admin') {
-        header('location:admin/home.php');
-        exit();
-    } else if ($_SESSION['role'] === 'user') {
-        header('location:user/home.php');
-        exit();
-    } else {
-        header('location:superadmin/home.php');
-        exit();
-    }
-}
-
+require "loginfunc.php";
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -69,10 +11,17 @@ if (isset($_SESSION['log'])) {
     <meta name="description" content="" />
     <meta name="author" content="" />
     <title>SISKA | LOGIN </title>
-    <link rel="icon" href="assets/img/logosiska.png" type="image/x-icon">
-    <link rel="shortcut icon" href="assets/img/logosiska.png" type="image/x-icon">
+    <link rel="icon" href="assets/img/siskalogo.png" type="image/x-icon">
+    <link rel="shortcut icon" href="assets/img/siskalogo.png" type="image/x-icon">
     <link href="css/styles.css" rel="stylesheet" />
+    <link href="css/tambah.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" crossorigin="anonymous"></script>
+    <style>
+        .card-header {
+            border-bottom: 1px solid #dee2e6;
+            /* Warna garis pemisah */
+        }
+    </style>
 </head>
 
 <body class="bg-primary">
@@ -83,10 +32,12 @@ if (isset($_SESSION['log'])) {
                     <div class="row justify-content-center">
                         <div class="col-lg-4">
                             <div class="card shadow-lg border-0 rounded-lg mt-5 w-100">
-                                <div class="card-body">
-                                    <div class="text-center mb-4">
-                                        <img src="assets/img/siskae.png" alt="" width="250px">
+                                <div class="card-header">
+                                    <div class="text-center mb-2">
+                                        <img src="assets/img/siska.png" alt="" width="250px">
                                     </div>
+                                </div>
+                                <div class="card-body">
                                     <?php
                                     if (isset($_SESSION['notification'])) {
                                         echo '<div class="alert alert-' . $_SESSION['notification']['type'] . ' alert-dismissible fade show" role="alert">
@@ -107,14 +58,15 @@ if (isset($_SESSION['log'])) {
                                             <label class="small mb-1" for="inputPassword">Password</label>
                                             <input class="form-control py-4" name="password" id="inputPassword" type="password" placeholder="Password" />
                                         </div>
+
                                         <div class="form-group d-flex justify-content-center mt-4 mb-0">
-                                            <button class="btn btn-primary" name="login">Login</button>
+                                            <button class="btn btn-primary" style="width: 1000px;" name="login">Login</button>
                                         </div>
                                         <input type="hidden" name="role" value="<?= $role; ?>">
                                     </form>
-                                    <div class="mt-4 text-center">
+                                    <!-- <div class="mt-4 text-center">
                                         <p>Belum punya akun? <a href="register.php">Daftar di sini</a></p>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div>
                         </div>

@@ -5,6 +5,166 @@ session_start();
 //koneksi ke database
 $conn = mysqli_connect("localhost", "root", "", "siska");
 
+//tambah proposal
+if (isset($_POST['tambahproposal'])) {
+    $namakegiatan = $_POST['namakegiatan'];
+    $tujuankegiatan = $_POST['tujuankegiatan'];
+    $dasarpelaksanaan = $_POST['dasarpelaksanaan'];
+    $waktupelaksanaan = $_POST['waktupelaksanaan'];
+    $waktuselesai = $_POST['waktuselesai'];
+    $tempatpelaksanaan = $_POST['tempatpelaksanaan'];
+    $pesertakegiatan = $_POST['pesertakegiatan'];
+    $targetluaran = $_POST['targetluaran'];
+    $totalanggaran = $_POST['totalanggaran'];
+    $unitpelaksana = $_POST['unitpelaksana'];
+    $sumberdana = $_POST['sumberdana'];
+
+    // Lampiran
+    $lampiran = $_FILES['lampiran']['name'];
+    $lampiran_temp = $_FILES['lampiran']['tmp_name'];
+    $lampiran_path = "../assets/pdf/$lampiran"; // Sesuaikan dengan path Anda
+
+    move_uploaded_file($lampiran_temp, $lampiran_path);
+
+    // penutup
+    $penutup = $_FILES['penutup']['name'];
+    $penutup_temp = $_FILES['penutup']['tmp_name'];
+    $penutup_path = "../assets/png/$penutup"; // Sesuaikan dengan path Anda
+
+    move_uploaded_file($penutup_temp, $penutup_path);
+
+    $username = $_SESSION['username'];
+
+    // Simpan data ke tabel proposal
+    $query = "INSERT INTO proposal (nama_kegiatan, tujuan_kegiatan, dasar_pelaksanaan, waktu_pelaksanaan, waktu_selesai, tempat_pelaksanaan,  peserta_kegiatan, target_luaran, total_anggaran, unit_pelaksana, sumber_dana, penutup, lampiran, status, verif_daku,verif_lpm,username)
+              VALUES ('$namakegiatan', '$tujuankegiatan', '$dasarpelaksanaan', '$waktupelaksanaan','$waktuselesai', '$tempatpelaksanaan', '$pesertakegiatan', '$targetluaran','$totalanggaran','$unitpelaksana','$sumberdana','$penutup', '$lampiran', 0, 0, 0,'$username')";
+
+    mysqli_query($conn, $query);
+
+    $proposal_id = mysqli_insert_id($conn); // Dapatkan ID proposal yang baru saja dimasukkan
+
+    // Simpan data ke tabel indikator_kinerja
+    if (isset($_POST['kodeiks']) && isset($_POST['iks']) && isset($_POST['rasional'])) {
+        $kode_iks = $_POST['kodeiks'];
+        $iks = $_POST['iks'];
+        $rasional = $_POST['rasional'];
+
+        // Simpan data ke tabel indikator_kinerja
+        $query = "INSERT INTO indikator_kinerja (proposal_id, kode_iks, iks, rasional)
+                  VALUES ('$proposal_id', '$kode_iks', '$iks', '$rasional')";
+
+        mysqli_query($conn, $query);
+    }
+    // Simpan data ke tabel rencana_anggaran
+    foreach ($_POST['jenis'] as $key => $value) {
+        $jenis_pengeluaran = $_POST['jenis'][$key];
+        $satuan = $_POST['satuan'][$key];
+        $jumlah = $_POST['jumlah'][$key];
+        $harga_satuan = $_POST['harga'][$key];
+        $kurs = $_POST['kurs'][$key];
+        $kode_anggaran = $_POST['kode'][$key];
+        $subtotal = $_POST['sub'][$key];
+
+        $queryRencana = "INSERT INTO rencana_anggaran (proposal_id, jenis_pengeluaran, satuan, jumlah, harga_satuan, kurs, kode_anggaran, subtotal) 
+        VALUES ('$proposal_id', '$jenis_pengeluaran', '$satuan', '$jumlah', '$harga_satuan', '$kurs','$kode_anggaran','$subtotal')";
+        mysqli_query($conn, $queryRencana);
+    }
+    // Redirect atau berikan notifikasi sesuai kebutuhan
+    header("location: proposal.php"); // Ganti dengan halaman yang sesuai
+
+}
+
+//edit proposal 
+if (isset($_POST['editproposal'])) {
+    $proposal_id = $_GET['id'];
+    $namakegiatan = $_POST['namakegiatan'];
+    $tujuankegiatan = $_POST['tujuankegiatan'];
+    $dasarpelaksanaan = $_POST['dasarpelaksanaan'];
+    $waktupelaksanaan = $_POST['waktupelaksanaan'];
+    $waktuselesai = $_POST['waktuselesai'];
+    $tempatpelaksanaan = $_POST['tempatpelaksanaan'];
+    $pesertakegiatan = $_POST['pesertakegiatan'];
+    $targetluaran = $_POST['targetluaran'];
+    $totalanggaran = $_POST['totalanggaran'];
+    $unitpelaksana = $_POST['unitpelaksana'];
+    $sumberdana = $_POST['sumberdana'];
+    // Lakukan pembaruan ke tabel proposal
+    $query = "UPDATE proposal SET
+              nama_kegiatan = '$namakegiatan',
+              tujuan_kegiatan = '$tujuankegiatan',
+              dasar_pelaksanaan = '$dasarpelaksanaan',
+              waktu_pelaksanaan = '$waktupelaksanaan',
+              waktu_selesai = '$waktuselesai',
+              tempat_pelaksanaan = '$tempatpelaksanaan',
+              peserta_kegiatan = '$pesertakegiatan',
+              target_luaran = '$targetluaran',
+              total_anggaran = '$totalanggaran',
+              unit_pelaksana = '$unitpelaksana',
+              sumber_dana = '$sumberdana',
+              status = 0,
+              verif_daku = 0,
+              verif_lpm = 0
+              WHERE id = '$proposal_id'";
+
+    mysqli_query($conn, $query);
+
+    // Lakukan pembaruan ke tabel indikator_kinerja
+    if (isset($_POST['kodeiks']) && isset($_POST['iks']) && isset($_POST['rasional'])) {
+        $kode_iks = $_POST['kodeiks'];
+        $iks = $_POST['iks'];
+        $rasional = $_POST['rasional'];
+
+        $query = "UPDATE indikator_kinerja SET
+                  kode_iks = '$kode_iks',
+                  iks = '$iks',
+                  rasional = '$rasional'
+                  WHERE proposal_id = '$proposal_id'";
+
+        mysqli_query($conn, $query);
+    }
+    // Hapus rencana anggaran yang terkait
+    $deleteQuery = "DELETE FROM rencana_anggaran WHERE proposal_id = '$proposal_id'";
+    mysqli_query($conn, $deleteQuery);
+
+
+    // Lakukan pembaruan atau penambahan data rencana anggaran
+    foreach ($_POST['jenis'] as $key => $value) {
+        $jenis_pengeluaran = $_POST['jenis'][$key];
+        $satuan = $_POST['satuan'][$key];
+        $jumlah = $_POST['jumlah'][$key];
+        $harga_satuan = $_POST['harga'][$key];
+        $kurs = $_POST['kurs'][$key];
+        $kode_anggaran = $_POST['kode'][$key];
+        $subtotal = $_POST['sub'][$key];
+
+        $queryRencana = "INSERT INTO rencana_anggaran (proposal_id, jenis_pengeluaran, satuan, jumlah, harga_satuan, kurs, kode_anggaran, subtotal) 
+        VALUES ('$proposal_id', '$jenis_pengeluaran', '$satuan', '$jumlah', '$harga_satuan', '$kurs','$kode_anggaran','$subtotal')";
+        mysqli_query($conn, $queryRencana);
+    }
+
+    // Redirect atau berikan notifikasi sesuai kebutuhan
+    header("location: proposal.php");
+}
+//hapus data proposal
+if (isset($_POST['hapusdataproposal'])) {
+    $id = $_POST['id'];
+
+    // Query untuk menghapus indikator_kinerja
+    $query = "DELETE FROM indikator_kinerja WHERE proposal_id = $id";
+    mysqli_query($conn, $query);
+
+    // Query untuk menghapus rencana_anggaran
+    $query = "DELETE FROM rencana_anggaran WHERE proposal_id = $id";
+    mysqli_query($conn, $query);
+
+    // Query untuk menghapus proposal
+    $query = "DELETE FROM proposal WHERE id = $id";
+    mysqli_query($conn, $query);
+
+    // Redirect atau berikan notifikasi sesuai kebutuhan
+    header("location: proposal.php"); // Ganti dengan halaman yang sesuai
+}
+
 //tambah data Kebijakan
 if (isset($_POST['addnewdatakebijakan'])) {
     $namakebijakan = $_POST['namakebijakan'];
@@ -445,9 +605,9 @@ if (isset($_POST['updatedataprosedur'])) {
     }
 }
 
-//tambah data institusi
-if (isset($_POST['addnewdatainstitusi'])) {
-    $namainstitusi = $_POST['namainstitusi'];
+//tambah data instruksi
+if (isset($_POST['addnewdatainstruksi'])) {
+    $namainstruksi = $_POST['namainstruksi'];
     $deskripsi = $_POST['deskripsi'];
     $tanggal = $_POST['tanggal'];
     $file = $_FILES['file']['name'];
@@ -460,21 +620,21 @@ if (isset($_POST['addnewdatainstitusi'])) {
         $allowedFileTypes = ['application/pdf'];
         if (in_array($_FILES['file']['type'], $allowedFileTypes)) {
             // Direktori untuk menyimpan file
-            $uploadDir = "../assets/institusi/pdf/";
+            $uploadDir = "../assets/instruksi/pdf/";
             $uploadedFile = $uploadDir . $_FILES['file']['name'];
 
             // Upload file
             if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadedFile)) {
                 // Simpan data ke database
-                $tambahinstitusi = mysqli_query($conn, "INSERT INTO institusi (namainstitusi, deskripsi, file, tanggal, status) VALUES ('$namainstitusi', '$deskripsi', '$file', '$tanggal',0)");
+                $tambahinstruksi = mysqli_query($conn, "INSERT INTO instruksi (namainstruksi, deskripsi, file, tanggal, status) VALUES ('$namainstruksi', '$deskripsi', '$file', '$tanggal',0)");
 
-                if ($tambahinstitusi) {
+                if ($tambahinstruksi) {
                     $_SESSION['notification'] = [
                         'type' => 'success',
                         'message' => 'Berhasil Menambah Data !'
                     ];
                 } else {
-                    header('location:institusi.php');
+                    header('location:instruksi.php');
                 }
             } else {
                 $_SESSION['notification'] = [
@@ -496,21 +656,21 @@ if (isset($_POST['addnewdatainstitusi'])) {
     }
 }
 
-//hapus data institusi
+//hapus data instruksi
 
-if (isset($_POST['hapusdatainstitusi'])) {
+if (isset($_POST['hapusdatainstruksi'])) {
     $idi = $_POST['idi'];
 
     // Ambil nama file PDF dari database
-    $query = mysqli_query($conn, "SELECT file FROM institusi WHERE idinstitusi = '$idi'");
+    $query = mysqli_query($conn, "SELECT file FROM instruksi WHERE idinstruksi = '$idi'");
     $data = mysqli_fetch_assoc($query);
     $fileToDelete = $data['file'];
 
     // Hapus file PDF dari direktori
-    $filePath = "../assets/institusi/pdf/" . $fileToDelete;
+    $filePath = "../assets/instruksi/pdf/" . $fileToDelete;
     if (unlink($filePath)) {
-        // Hapus data institusi dari database
-        $hapus = mysqli_query($conn, "DELETE FROM institusi WHERE idinstitusi = '$idi'");
+        // Hapus data instruksi dari database
+        $hapus = mysqli_query($conn, "DELETE FROM instruksi WHERE idinstruksi = '$idi'");
 
         if ($hapus) {
             $_SESSION['notification'] = [
@@ -530,10 +690,10 @@ if (isset($_POST['hapusdatainstitusi'])) {
         ];
     }
 }
-//update info institusi
-if (isset($_POST['updatedatainstitusi'])) {
+//update info instruksi
+if (isset($_POST['updatedatainstruksi'])) {
     $idi = $_POST['idi'];
-    $namainstitusi = $_POST['namainstitusi'];
+    $namainstruksi = $_POST['namainstruksi'];
     $deskripsi = $_POST['deskripsi'];
     $tanggal = $_POST['tanggal'];
     $file = $_FILES['file']['name']; // Gunakan 'newfile' sebagai nama input file
@@ -545,13 +705,13 @@ if (isset($_POST['updatedatainstitusi'])) {
         $allowedFileTypes = ['application/pdf'];
         if (in_array($_FILES['file']['type'], $allowedFileTypes)) {
             // Direktori untuk menyimpan file
-            $uploadDir = "../assets/institusi/pdf/";
+            $uploadDir = "../assets/instruksi/pdf/";
             $uploadedFile = $uploadDir . $_FILES['file']['name'];
 
             // Upload file
             if (move_uploaded_file($_FILES['file']['tmp_name'], $uploadedFile)) {
                 // Hapus file PDF lama jika perlu
-                $ambilFileLama = mysqli_query($conn, "SELECT file FROM institusi WHERE idinstitusi = '$idi'");
+                $ambilFileLama = mysqli_query($conn, "SELECT file FROM instruksi WHERE idinstruksi = '$idi'");
                 $dataFileLama = mysqli_fetch_assoc($ambilFileLama);
                 $fileLama = $dataFileLama['file'];
                 $fileLamaPath = $uploadDir . $fileLama;
@@ -560,8 +720,8 @@ if (isset($_POST['updatedatainstitusi'])) {
                     unlink($fileLamaPath); // Hapus file PDF lama
                 }
 
-                // Update data institusi dengan file PDF baru dan tanggal_update
-                $update = mysqli_query($conn, "UPDATE institusi SET namainstitusi = '$namainstitusi', deskripsi = '$deskripsi', file = '$file', tanggal = '$tanggal', status = 0 WHERE idinstitusi = '$idi'");
+                // Update data instruksi dengan file PDF baru dan tanggal_update
+                $update = mysqli_query($conn, "UPDATE instruksi SET namainstruksi = '$namainstruksi', deskripsi = '$deskripsi', file = '$file', tanggal = '$tanggal', status = 0 WHERE idinstruksi = '$idi'");
 
                 if ($update) {
                     $_SESSION['notification'] = [
@@ -598,6 +758,7 @@ if (isset($_POST['updatedatainstitusi'])) {
 if (isset($_POST['addadmin'])) {
     $username = $_POST['username'];
     $password = $_POST['password'];
+    $email = $_POST['email'];
     // Periksa apakah username sudah ada
     $check_query = mysqli_query($conn, "SELECT * FROM user WHERE username='$username'");
     if (mysqli_num_rows($check_query) > 0) {
@@ -607,7 +768,7 @@ if (isset($_POST['addadmin'])) {
         ];
     } else {
 
-        $queryinsert = mysqli_query($conn, "insert into user (username, password, role) values('$username', '$password', 'admin')");
+        $queryinsert = mysqli_query($conn, "insert into user (username, password,email, role) values('$username', '$password','$email', 'admin')");
 
         if ($queryinsert) {
             $_SESSION['notification'] = [
@@ -626,6 +787,7 @@ if (isset($_POST['addadmin'])) {
 //edit admin 
 if (isset($_POST['updateadmin'])) {
     $usernamebaru = $_POST['usernameadmin'];
+    $emailbaru = $_POST['emailbaru'];
     $passwordbaru = $_POST['passwordbaru'];
     $idnya = $_POST['id'];
 
@@ -638,7 +800,7 @@ if (isset($_POST['updateadmin'])) {
         ];
     } else {
 
-        $queryupdate = mysqli_query($conn, "update user set username = '$usernamebaru', password = '$passwordbaru' where id = '$idnya'");
+        $queryupdate = mysqli_query($conn, "update user set username = '$usernamebaru', email = '$emailbaru', password = '$passwordbaru' where id = '$idnya'");
 
         if ($queryupdate) {
             $_SESSION['notification'] = [
@@ -672,10 +834,11 @@ if (isset($_POST['hapusadmin'])) {
         ];
     }
 }
-//menambah user
+//nambah user
 if (isset($_POST['adduser'])) {
     $username = $_POST['username'];
     $password = $_POST['password'];
+    $email = $_POST['email'];
 
     // Periksa apakah username sudah ada
     $check_query = mysqli_query($conn, "SELECT * FROM user WHERE username='$username'");
@@ -686,7 +849,7 @@ if (isset($_POST['adduser'])) {
         ];
     } else {
         // Jika username belum ada, maka lakukan INSERT
-        $queryinsert = mysqli_query($conn, "INSERT INTO user (username, password, role) VALUES ('$username', '$password', 'user')");
+        $queryinsert = mysqli_query($conn, "INSERT INTO user (username, password, email, role) VALUES ('$username', '$password', '$email', 'user')");
 
         if ($queryinsert) {
             $_SESSION['notification'] = [
@@ -696,7 +859,7 @@ if (isset($_POST['adduser'])) {
         } else {
             $_SESSION['notification'] = [
                 'type' => 'danger',
-                'message' => 'Gagal Menambah user  !'
+                'message' => 'Gagal Menambah user  ! '
             ];
         }
     }
@@ -705,6 +868,7 @@ if (isset($_POST['adduser'])) {
 //edit user
 if (isset($_POST['updateuser'])) {
     $usernamebaru = $_POST['usernameuser'];
+    $emailbaru = $_POST['emailbaru'];
     $passwordbaru = $_POST['passwordbaru'];
     $id = $_POST['id'];
 
@@ -717,7 +881,7 @@ if (isset($_POST['updateuser'])) {
         ];
     } else {
         // Jika username belum ada, maka lakukan UPDATE
-        $queryupdate = mysqli_query($conn, "UPDATE user SET username = '$usernamebaru', password = '$passwordbaru' WHERE id = '$id'");
+        $queryupdate = mysqli_query($conn, "UPDATE user SET username = '$usernamebaru', password = '$passwordbaru', email = '$emailbaru' WHERE id = '$id'");
 
         if ($queryupdate) {
             $_SESSION['notification'] = [
@@ -769,6 +933,23 @@ if (isset($_POST['verifikasidatakebijakan'])) {
         header('location:index.php');
     }
 }
+
+//batal verifikasi data kebijakan
+if (isset($_POST['tidakverifdatakebijakan'])) {
+    $idk = $_POST['idk'];
+
+    // Set status_verifikasi = 1
+    $verif = mysqli_query($conn, "update kebijakan set status = 2 WHERE idkebijakan = $idk");
+
+    if ($verif) {
+        $_SESSION['notification'] = [
+            'type' => 'danger',
+            'message' => 'Tidak Terverifikasi !'
+        ];
+    } else {
+        header('location:index.php');
+    }
+}
 //verifikasi data prosedur
 if (isset($_POST['verifikasidataprosedur'])) {
     $idp = $_POST['idp'];
@@ -780,6 +961,22 @@ if (isset($_POST['verifikasidataprosedur'])) {
         $_SESSION['notification'] = [
             'type' => 'success',
             'message' => 'Berhasil Verifikasi !'
+        ];
+    } else {
+        header('location:prosedur.php');
+    }
+}
+//batal verifikasi data prosedur
+if (isset($_POST['tidakverifdataprosedur'])) {
+    $idp = $_POST['idp'];
+
+    // Set status_verifikasi = 1
+    $verif = mysqli_query($conn, "update prosedur set status = 2 WHERE idprosedur = $idp");
+
+    if ($verif) {
+        $_SESSION['notification'] = [
+            'type' => 'danger',
+            'message' => 'Tidak Terverifikasi !'
         ];
     } else {
         header('location:prosedur.php');
@@ -802,12 +999,28 @@ if (isset($_POST['verifikasidatastandar'])) {
         header('location:standar.php');
     }
 }
-//verifikasi data institusi
-if (isset($_POST['verifikasidatainstitusi'])) {
+//batal verifikasi data standar
+if (isset($_POST['tidakverifdatastandar'])) {
+    $ids = $_POST['ids'];
+
+    // Set status_verifikasi = 1
+    $verif = mysqli_query($conn, "update standar set status = 2 WHERE idstandar = $ids");
+
+    if ($verif) {
+        $_SESSION['notification'] = [
+            'type' => 'danger',
+            'message' => 'Tidak Terverifikasi !'
+        ];
+    } else {
+        header('location:standar.php');
+    }
+}
+//verifikasi data instruksi
+if (isset($_POST['verifikasidatainstruksi'])) {
     $idi = $_POST['idi'];
 
     // Set status_verifikasi = 1
-    $verif = mysqli_query($conn, "update institusi set status = 1 WHERE idinstitusi = $idi");
+    $verif = mysqli_query($conn, "update instruksi set status = 1 WHERE idinstruksi = $idi");
 
     if ($verif) {
         $_SESSION['notification'] = [
@@ -815,6 +1028,87 @@ if (isset($_POST['verifikasidatainstitusi'])) {
             'message' => 'Berhasil Verifikasi !'
         ];
     } else {
-        header('location:institusi.php');
+        header('location:instruksi.php');
+    }
+}
+//batal verifikasi data instruksi
+if (isset($_POST['tidakverifdatainstruksi'])) {
+    $idi = $_POST['idi'];
+
+    // Set status_verifikasi = 1
+    $verif = mysqli_query($conn, "update instruksi set status = 2 WHERE idinstruksi = $idi");
+
+    if ($verif) {
+        $_SESSION['notification'] = [
+            'type' => 'danger',
+            'message' => 'Tidak Terverifikasi !'
+        ];
+    } else {
+        header('location:instruksi.php');
+    }
+}
+
+//verifikasi data proposal
+if (isset($_POST['verifikasiproposallpm'])) {
+    $id = $_POST['id'];
+
+    // Set status_verifikasi = 1
+    $verif = mysqli_query($conn, "update proposal set verif_lpm = 1 WHERE id = $id");
+
+    if ($verif) {
+        $_SESSION['notification'] = [
+            'type' => 'success',
+            'message' => 'LPM Berhasil Verfikasi'
+        ];
+    } else {
+        header('location:proposal.php');
+    }
+
+    $cek = mysqli_query($conn, "SELECT * FROM proposal WHERE id = $id AND verif_lpm = 1 AND verif_daku = 1");
+
+    if (mysqli_num_rows($cek) > 0) {
+        // Kedua pihak sudah melakukan verifikasi, set status = 1
+        mysqli_query($conn, "UPDATE proposal SET status = 1 WHERE id = $id");
+    }
+}
+
+//verifikasi data proposal
+if (isset($_POST['verifikasiproposaldaku'])) {
+    $id = $_POST['id'];
+
+    // Set status_verifikasi = 1
+    $verif = mysqli_query($conn, "update proposal set verif_daku = 1 WHERE id = $id");
+
+    if ($verif) {
+        $_SESSION['notification'] = [
+            'type' => 'success',
+            'message' => 'DAKU Berhasil Verfikasi !'
+        ];
+    } else {
+        header('location:proposal.php');
+    }
+
+    $cek = mysqli_query($conn, "SELECT * FROM proposal WHERE id = $id AND verif_lpm = 1 AND verif_daku = 1");
+
+    if (mysqli_num_rows($cek) > 0) {
+        // Kedua pihak sudah melakukan verifikasi, set status = 1
+        mysqli_query($conn, "UPDATE proposal SET status = 1 WHERE id = $id");
+    }
+}
+
+//batal verifikasi data proposal
+if (isset($_POST['tolakproposallpm']) || isset($_POST['tolakproposaldaku'])) {
+    $id = $_POST['id'];
+
+    // Set status_verifikasi = 2
+    $verif = mysqli_query($conn, "update proposal set status = 2, verif_daku = 0, verif_lpm = 0 WHERE id = $id");
+
+    if ($verif) {
+        $_SESSION['notification'] = [
+            'type' => 'danger',
+            'message' => 'Tidak Terverifikasi !'
+        ];
+    } else {
+        header('location:proposal.php');
     }
 }

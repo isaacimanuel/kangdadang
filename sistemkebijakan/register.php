@@ -7,10 +7,11 @@ $conn = mysqli_connect("localhost", "root", "", "siska");
 if (isset($_POST['register'])) {
     $username = $_POST['username'];
     $password = $_POST['password'];
+    $email = $_POST['email'];
     $verify_password = $_POST['verify_password'];
 
     // Validasi apakah ada field yang kosong
-    if (empty($username) || empty($password) || empty($verify_password)) {
+    if (empty($username) || empty($password) || empty($email) || empty($verify_password)) {
         $_SESSION['notification'] = [
             'type' => 'danger',
             'message' => ' Harap isi data dahulu.'
@@ -42,21 +43,36 @@ if (isset($_POST['register'])) {
         exit();
     }
 
-    // Jika validasi berhasil, masukkan data ke database
-    $insert_query = "INSERT INTO user (username, password, role) VALUES ('$username', '$password', 'user')";
+    // Lakukan validasi apakah Email sudah ada
+    $periksaEmail = "SELECT * FROM user WHERE Email = '$Email'";
+    $check_result = mysqli_query($conn, $periksaEmail);
+
+    if (mysqli_num_rows($check_result) > 0) {
+        $_SESSION['notification'] = [
+            'type' => 'danger',
+            'message' => ' Mohon maaf Email sudah dipakai.'
+        ];
+        header('location: register.php');
+        exit();
+    }
+
+    // Jika validasi berhasil, masukkan data ke database dengan status 0
+    $insert_query = "INSERT INTO user (username, password, email, role, status) VALUES ('$username', '$password', '$email', 'user', 0)";
     $result = mysqli_query($conn, $insert_query);
 
     if ($result) {
         $_SESSION['notification'] = [
             'type' => 'success',
-            'message' => ' Berhasil Membuat Akun ! Silahkan ke halaman login'
+            'message' => 'Berhasil membuat akun! Akun Anda perlu diverifikasi oleh admin sebelum Anda dapat login. Mohon Cek halaman login secara berkala'
         ];
     } else {
-        // Redirect ke halaman registrasi dengan notifikasi
-        header('location: register.php');
-        exit();
+        $_SESSION['notification'] = [
+            'type' => 'danger',
+            'message' => 'Gagal membuat akun. Silahkan coba lagi.'
+        ];
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -69,9 +85,10 @@ if (isset($_POST['register'])) {
     <meta name="description" content="" />
     <meta name="author" content="" />
     <title>SISKA | Register</title>
-    <link rel="icon" href="assets/img/logosiska.png" type="image/x-icon">
-    <link rel="shortcut icon" href="assets/img/logosiska.png" type="image/x-icon">
+    <link rel="icon" href="assets/img/siskalogo.png" type="image/x-icon">
+    <link rel="shortcut icon" href="assets/img/siskalogo.png" type="image/x-icon">
     <link href="css/styles.css" rel="stylesheet" />
+    <link href="css/tambah.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js" crossorigin="anonymous"></script>
 </head>
 
@@ -82,10 +99,10 @@ if (isset($_POST['register'])) {
                 <div class="container">
                     <div class="row justify-content-center">
                         <div class="col-lg-6">
-                            <div class="card shadow-lg border-0 rounded-lg mt-5 w-100 mx-auto">
+                            <div class="card shadow-lg border-0 rounded-lg mt-3 w-100 mx-auto">
                                 <div class="card-body">
                                     <div class="text-center mb-4">
-                                        <img src="assets/img/siskae.png" alt="" width="300px">
+                                        <img src="assets/img/siska.png" alt="" width="250px">
                                     </div>
                                     <?php
                                     if (isset($_SESSION['notification'])) {
@@ -102,6 +119,10 @@ if (isset($_POST['register'])) {
                                         <div class="form-group">
                                             <label class="small mb-1" for="inputUsername">Username</label>
                                             <input class="form-control py-4" name="username" id="inputUsername" type="text" placeholder="Username" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="small mb-1" for="inputEmail">Email</label>
+                                            <input class="form-control py-4" name="email" id="inputEmail" type="email" placeholder="Email" />
                                         </div>
                                         <div class="form-group row">
                                             <div class="col-md-6"> <!-- Baris 1 -->
