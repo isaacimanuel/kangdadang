@@ -1,0 +1,17 @@
+jika file dokumen diedit maka user akan 
+melihat file lama lalu setelah di verifikasi baru akan terganti dengan dokumen baru
+
+kelompokan pesanan masing masing username  
+
+nama pemesan  1 ||    Tombol Detail    
+nama pemesan  2 ||    Tombol Detail 
+nama pemesan  3 ||    Tombol Detail 
+
+
+gambar 300kb (V), tambah nama vendor(V), sort berdasarkan harga, vendor, dipisahkan per konten(elektronik, mebel)(v) kalau bisa tambah filter(vendor, range harga)
+tabel tipe idtipe, nama tipe(elektronik, mebel,kendaraan) (V)
+bisa tambah tipe (v)
+print invoice jadi pdf
+invoice tambah harga satuan || harga total (V)
+
+buat database menjadi 1 saja bagian kebijakan(fakultas,direktorat,instruksi,prosedur,standar)
